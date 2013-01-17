@@ -68,34 +68,24 @@ class wp_gravatar_cache{
     if (is_admin())
       return $text;
   
-    preg_match('/http(?:s*):\/\/(?:[a-z0-9]+).gravatar.com\/avatar\/([a-z0-9]+)\?s=(\d+)(?:\S*)&amp;r=(\w*)/',$text,$match);
-    $ourl = $match[0];
+    preg_match('/src=\'\S+\'/', $text, $ourl);
+    $ourl = urldecode($ourl[0]);
+
+    preg_match('/http(?:s*):\/\/(?:[a-z0-9]+).gravatar.com\/avatar\/([a-z0-9]+)\?s=(\d+)(?:\S*)&amp;r=(\w*)/',$ourl,$match);
     $email_hash = $match[1];
     $size = $match[2];
     $rate = $match[3];
-    if ( empty($rate) ) {
-      $rate = get_option('avatar_rating');
-    }
-  
-    $default = get_option('avatar_default');
-    switch($default) {
-      case 'mystery':
-        $default = 'mm';
-        break;
-      case 'gravatar_default':
-        $default = urlencode("https://secure.gravatar.com/avatar/?s={$size}");
-        break;
-    }
     $file = $this->options['wpgc_dir'].$email_hash.'_'.$size.'_'.$rate;
+
     if ( !file_exists($file) || time() - filemtime($file) > 86400 * $this->options['wpgc_exp'] ) {
-      $img = file_get_contents("https://secure.gravatar.com/avatar/{$email_hash}?s={$size}&d={$default}");
+      $img = file_get_contents($ourl);
       file_put_contents($file,$img);
     }
     $url = $this->options['wpgc_url'];
     if (substr($url, -1) !== '/')
       $url .= '/';
     $url .= $email_hash.'_'.$size.'_'.$rate;
-    return preg_replace('/src=\'\S+\'/',"src='{$url}'",$text);
+    return str_replace($ourl, $url, $text);
   }
   
   function wpgc_options_page(){
