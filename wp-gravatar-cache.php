@@ -2,7 +2,7 @@
 /* 
 Plugin Name: WP Gravatar Cache
 Plugin URI: https://github.com/xjpvictor/wp-gravatar-cache
-Version: 0.0.3
+Version: 0.0.4
 Author: xjpvictor
 Description: A wordpress plugin to cache gravatar images.
 */
@@ -68,13 +68,19 @@ class wp_gravatar_cache{
     if (is_admin())
       return $text;
   
-    preg_match('/src=\'\S+\'/', $text, $ourl);
-    $ourl = urldecode($ourl[0]);
+    preg_match('/src=\'(\S+)\'/', $text, $ourl);
+    $ourl = str_replace('&amp;', '&', $ourl[1]);
 
-    preg_match('/http(?:s*):\/\/(?:[a-z0-9]+).gravatar.com\/avatar\/([a-z0-9]+)\?s=(\d+)(?:\S*)&amp;r=(\w*)/',$ourl,$match);
+    preg_match('/&amp;r=(\w*)/',$ourl,$match);
+    if (!empty($match))
+      $rate = $match[1];
+    else
+      $rate = '';
+    preg_match('/http(?:s*):\/\/(?:[a-z0-9]+).gravatar.com\/avatar\/([a-z0-9]+)\?s=(\d+)(?:\S*)/',$ourl,$match);
+    if (empty($match))
+      return($text);
     $email_hash = $match[1];
     $size = $match[2];
-    $rate = $match[3];
     $file = $this->options['wpgc_dir'].$email_hash.'_'.$size.'_'.$rate;
 
     if ( !file_exists($file) || time() - filemtime($file) > 86400 * $this->options['wpgc_exp'] ) {
