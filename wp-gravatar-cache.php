@@ -69,7 +69,8 @@ class wp_gravatar_cache{
       return $text;
   
     preg_match('/src=\'(\S+)\'/', $text, $ourl);
-    $ourl = str_replace('&amp;', '&', $ourl[1]);
+    $ourl = $ourl[1];
+    $surl = str_replace('&amp;', '&', $ourl);
 
     preg_match('/&amp;r=(\w*)/',$ourl,$match);
     if (!empty($match))
@@ -83,9 +84,9 @@ class wp_gravatar_cache{
     $size = $match[2];
     $file = $this->options['wpgc_dir'].$email_hash.'_'.$size.'_'.$rate;
 
-    if ( !file_exists($file) || time() - filemtime($file) > 86400 * $this->options['wpgc_exp'] ) {
-      $img = file_get_contents($ourl);
-      file_put_contents($file,$img);
+    if (!file_exists($file) || filesize($file) == '0' || (time() - filemtime($file) > 86400 * $this->options['wpgc_exp'])) {
+      $img = file_get_contents($surl);
+      file_put_contents($file, $img);
     }
     $url = $this->options['wpgc_url'];
     if (substr($url, -1) !== '/')
