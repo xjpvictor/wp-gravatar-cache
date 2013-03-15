@@ -2,7 +2,7 @@
 /* 
 Plugin Name: WP Gravatar Cache
 Plugin URI: https://github.com/xjpvictor/wp-gravatar-cache
-Version: 0.0.5
+Version: 0.0.7
 Author: xjpvictor
 Description: A wordpress plugin to cache gravatar images.
 */
@@ -77,6 +77,7 @@ class wp_gravatar_cache{
       $rate = $match[1];
     else
       $rate = '';
+
     preg_match('/http(?:s*):\/\/(?:[a-z0-9]+).gravatar.com\/avatar\/([a-z0-9]+)\?s=(\d+)(?:\S*)/',$ourl,$match);
     if (empty($match))
       return($text);
@@ -84,14 +85,27 @@ class wp_gravatar_cache{
     $size = $match[2];
     $file = $this->options['wpgc_dir'].$email_hash.'_'.$size.'_'.$rate;
 
+    $default_url = str_replace("$email_hash", '00000000000000000000000000000000', $surl);
+    $default_file = $this->options['wpgc_dir'].'default_'.$size;
+    if (!file_exists($default_file) || filesize($default_file) == '0') {
+      $default_img = file_get_contents($default_url);
+      file_put_contents($default_file, $default_img);
+    } else
+      $default_img = file_get_contents($default_file);
+
     if (!file_exists($file) || filesize($file) == '0' || (time() - filemtime($file) > 86400 * $this->options['wpgc_exp'])) {
       $img = file_get_contents($surl);
       file_put_contents($file, $img);
-    }
+    } else
+      $img = file_get_contents($file);
+
     $url = $this->options['wpgc_url'];
     if (substr($url, -1) !== '/')
       $url .= '/';
-    $url .= $email_hash.'_'.$size.'_'.$rate;
+    if ($img === $default_img)
+      $url .= 'default_'.$size;
+    else
+      $url .= $email_hash.'_'.$size.'_'.$rate;
     return str_replace($ourl, $url, $text);
   }
   
