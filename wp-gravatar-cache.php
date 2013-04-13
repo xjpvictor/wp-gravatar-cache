@@ -2,7 +2,7 @@
 /* 
 Plugin Name: WP Gravatar Cache
 Plugin URI: https://github.com/xjpvictor/wp-gravatar-cache
-Version: 0.0.7
+Version: 0.0.8
 Author: xjpvictor
 Description: A wordpress plugin to cache gravatar images.
 */
@@ -106,7 +106,7 @@ class wp_gravatar_cache{
       $url .= 'default_'.$size;
     else
       $url .= $email_hash.'_'.$size.'_'.$rate;
-    return str_replace($ourl, $url, $text);
+    return str_replace($ourl, $url.'?hash='.md5($img), $text);
   }
   
   function wpgc_options_page(){
