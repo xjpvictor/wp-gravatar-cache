@@ -1,9 +1,9 @@
 <?php
-/* 
+/*
 Plugin Name: WP Gravatar Cache
 Plugin URI: https://github.com/xjpvictor/wp-gravatar-cache
-Version: 0.0.8
-Author: xjpvictor
+Version: 0.0.9
+Author: xjpvictor Huang
 Description: A wordpress plugin to cache gravatar images.
 */
 
@@ -13,17 +13,17 @@ class wp_gravatar_cache{
   var $options_key = array('wpgc_dir', 'wpgc_url', 'wpgc_exp', 'wpgc_cc', 'wpgc_cc_ts');
   var $options = array();
   var $message = '';
-  
+
   function wp_gravatar_cache(){
     $this->wpgc_init();
     $this->wpgc_init_hook();
     if (!empty($_POST))
       $this->wpgc_post();
   }
-  
+
   function wpgc_init(){
     $options_default = array(__DIR__.'/cache/', site_url().'/wp-content/plugins/wp-gravatar-cache/cache/', '7', '30', time());
-  
+
     foreach ($this->options_key as $key => $option_key) {
       $this->options[$option_key] = get_option($option_key);
       if (!$this->options[$option_key]) {
@@ -44,17 +44,17 @@ class wp_gravatar_cache{
       }
     }
   }
-  
+
   function wpgc_init_hook(){
     add_filter('get_avatar', array(&$this, 'wpgc_get_avatar'));
     add_action('admin_menu', array(&$this, 'wpgc_options_page'));
     register_deactivation_hook( __FILE__, array(&$this, 'wpgc_deactivate'));
   }
-  
+
   function wpgc_get_avatar($text) {
     if (!$text)
       return $text;
-  
+
     if (time() - $this->options['wpgc_cc_ts'] >= $this->options['wpgc_cc'] * 86400) {
       update_option('wpgc_cc_ts', time());
       $files = scandir($this->options['wpgc_dir']);
@@ -64,10 +64,10 @@ class wp_gravatar_cache{
         }
       }
     }
-  
+
     if (is_admin())
       return $text;
-  
+
     preg_match('/src=\'(\S+)\'/', $text, $ourl);
     $ourl = $ourl[1];
     $surl = str_replace('&amp;', '&', $ourl);
@@ -108,11 +108,11 @@ class wp_gravatar_cache{
       $url .= $email_hash.'_'.$size.'_'.$rate;
     return str_replace($ourl, $url.'?hash='.md5($img), $text);
   }
-  
+
   function wpgc_options_page(){
     add_options_page('WP Gravatar Cache Option', 'WP Gravatar Cache', 'manage_options', 'wp-gravatar-cache.php', array(&$this, 'options_page'));
   }
-  
+
   function options_page(){
   ?>
   <div class="wrap">
@@ -121,12 +121,12 @@ class wp_gravatar_cache{
       <fieldset name="wp_basic_options"  class="options">
     <form method="post" action="">
       <?php if (!empty($this->message)) echo '<p style="color:red;">'.$this->message.'</p>'; ?>
-      <p>Cache directory:</p>
-      <input required type="text" class="regular-text" name="wpgc_dir" value="<?php echo htmlentities($this->options['wpgc_dir']); ?>" />
-      <p>Base URL for cached gravatar images:</p>
-      <input required type="text" class="regular-text" name="wpgc_url" value="<?php echo htmlentities($this->options['wpgc_url']); ?>" />
-      <p>Cache expire time: <input required type="text" size="3" name="wpgc_exp" value="<?php echo $this->options['wpgc_exp']; ?>" /> days (Update images in case user changes avatar.)</p>
-      <p>Cache clean time: <input required type="text" size="3" name="wpgc_cc" value="<?php echo $this->options['wpgc_cc']; ?>" /> days (Delete cache files in case user's comments are deleted. Recommended to be long enough especially when html cache plugins are activated, eg. wp-supercache.)</p>
+      <p>Cache directory:<br/>
+      <input required type="text" class="regular-text" name="wpgc_dir" value="<?php echo htmlentities($this->options['wpgc_dir']); ?>" /></p>
+      <p>Base URL for cached gravatar images:<br/>
+      <input required type="text" class="regular-text" name="wpgc_url" value="<?php echo htmlentities($this->options['wpgc_url']); ?>" /></p>
+      <p>Cache expire time: <input required type="number" min="0" size="3" name="wpgc_exp" value="<?php echo $this->options['wpgc_exp']; ?>" /> days (Update images in case user changes avatar.)</p>
+      <p>Cache clean time: <input required type="number" min="0" size="3" name="wpgc_cc" value="<?php echo $this->options['wpgc_cc']; ?>" /> days (Delete cache files in case user's comments are deleted. Recommended to be long enough especially when html cache plugins are activated, eg. wp-supercache.)</p>
       <input type="submit" class="button button-primary" name="wpgc_update" /><br/><br/>
   <?php
     $files = scandir($this->options['wpgc_dir']);
@@ -157,13 +157,13 @@ class wp_gravatar_cache{
   </div>
   <?php
   }
-  
+
   function wpgc_deactivate() {
     foreach ($this->options_key as $option) {
       delete_option($option);
     }
   }
-  
+
   function wpgc_post() {
     if (isset($_POST['wpgc_update'])) {
       if (array_key_exists('wpgc_dir', $_POST) && array_key_exists('wpgc_url', $_POST) && array_key_exists('wpgc_exp', $_POST) && array_key_exists('wpgc_cc', $_POST)) {
