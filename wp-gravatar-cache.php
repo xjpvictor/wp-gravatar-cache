@@ -2,7 +2,7 @@
 /*
 Plugin Name: WP Gravatar Cache
 Plugin URI: https://github.com/xjpvictor/wp-gravatar-cache
-Version: 0.0.9
+Version: 0.0.10
 Author: xjpvictor Huang
 Description: A wordpress plugin to cache gravatar images.
 */
