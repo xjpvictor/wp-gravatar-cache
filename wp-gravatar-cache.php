@@ -70,9 +70,9 @@ class wp_gravatar_cache{
 
     preg_match('/src=\'(\S+)\'/', $text, $ourl);
     $ourl = $ourl[1];
-    $surl = str_replace('&amp;', '&', $ourl);
+    $surl = str_replace('&'.(strstr($ourl, '&amp;') !== false ? 'amp' : '#038').';', '&', $ourl);
 
-    preg_match('/&amp;r=(\w*)/',$ourl,$match);
+    preg_match('/&r=(\w*)/',$surl,$match);
     if (!empty($match))
       $rate = $match[1];
     else
