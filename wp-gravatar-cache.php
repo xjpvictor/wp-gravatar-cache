@@ -68,45 +68,53 @@ class wp_gravatar_cache{
     if (is_admin())
       return $text;
 
-    preg_match('/src=\'(\S+)\'/', $text, $ourl);
-    $ourl = $ourl[1];
-    $surl = str_replace('&'.(strstr($ourl, '&amp;') !== false ? 'amp' : '#038').';', '&', $ourl);
+    preg_match_all('/src(?:set)?\s*=\s*(?:\'|")\s*([^\'",\s]+)(?:\s+[^\'",]+)*\s*[\'",]/i', $text, $ourls);
 
-    preg_match('/&r=(\w*)/',$surl,$match);
-    if (!empty($match))
-      $rate = $match[1];
-    else
-      $rate = '';
+    foreach ($ourls[1] as $ourl) {
 
-    preg_match('/http(?:s*):\/\/(?:[a-z0-9]+).gravatar.com\/avatar\/([a-z0-9]+)\?s=(\d+)(?:\S*)/',$ourl,$match);
-    if (empty($match))
-      return($text);
-    $email_hash = $match[1];
-    $size = $match[2];
-    $file = $this->options['wpgc_dir'].$email_hash.'_'.$size.'_'.$rate;
+      $surl = str_replace('&'.(strstr($ourl, '&amp;') !== false ? 'amp' : '#038').';', '&', $ourl);
 
-    $default_url = str_replace("$email_hash", '00000000000000000000000000000000', $surl);
-    $default_file = $this->options['wpgc_dir'].'default_'.$size;
-    if (!file_exists($default_file) || filesize($default_file) == '0') {
-      $default_img = file_get_contents($default_url);
-      file_put_contents($default_file, $default_img);
-    } else
-      $default_img = file_get_contents($default_file);
+      preg_match('/&r=(\w*)/',$surl,$match);
+      if (!empty($match))
+        $rate = $match[1];
+      else
+        $rate = '';
 
-    if (!file_exists($file) || filesize($file) == '0' || (time() - filemtime($file) > 86400 * $this->options['wpgc_exp'])) {
-      $img = file_get_contents($surl);
-      file_put_contents($file, $img);
-    } else
-      $img = file_get_contents($file);
+      preg_match('/http(?:s*):\/\/(?:[a-z0-9]+).gravatar.com\/avatar\/([a-z0-9]+)\?s=(\d+)(?:\S*)/i',$ourl,$match);
+      if (empty($match))
+        return($text);
+      $email_hash = $match[1];
+      $size = $match[2];
+      $file = $this->options['wpgc_dir'].$email_hash.'_'.$size.'_'.$rate;
 
-    $url = $this->options['wpgc_url'];
-    if (substr($url, -1) !== '/')
-      $url .= '/';
-    if ($img === $default_img)
-      $url .= 'default_'.$size;
-    else
-      $url .= $email_hash.'_'.$size.'_'.$rate;
-    return str_replace($ourl, $url.'?hash='.md5($img), $text);
+      $default_url = str_replace("$email_hash", '00000000000000000000000000000000', $surl);
+      $default_file = $this->options['wpgc_dir'].'default_'.$size;
+      if (!file_exists($default_file) || filesize($default_file) == '0') {
+        $default_img = file_get_contents($default_url);
+        file_put_contents($default_file, $default_img);
+      } else
+        $default_img = file_get_contents($default_file);
+
+      if (!file_exists($file) || filesize($file) == '0' || (time() - filemtime($file) > 86400 * $this->options['wpgc_exp'])) {
+        $img = file_get_contents($surl);
+        file_put_contents($file, $img);
+      } else
+        $img = file_get_contents($file);
+
+      $url = $this->options['wpgc_url'];
+      if (substr($url, -1) !== '/')
+        $url .= '/';
+      if ($img === $default_img)
+        $url .= 'default_'.$size;
+      else
+        $url .= $email_hash.'_'.$size.'_'.$rate;
+
+      $text = str_replace($ourl, $url.'?hash='.md5($img), $text);
+
+    }
+
+    return $text;
+
   }
 
   function wpgc_options_page(){
